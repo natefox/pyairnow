@@ -1,4 +1,5 @@
 '''Retrieve Air Quality Forecasts'''
+import warnings
 from datetime import date as date_, datetime
 from typing import Callable, Coroutine, Optional, Union
 
@@ -39,8 +40,12 @@ class Forecast:
     Class to retrieve the air quality forecast by zip code or by latitude and
     longitude.
     '''
-    def __init__(self, request: Callable[..., Coroutine]) -> None:
+    def __init__(
+        self, request: Callable[..., Coroutine], *,
+        legacy_format: bool = True
+    ) -> None:
         self._request = request
+        self._legacy_format = legacy_format
 
     async def zipCode(
         self,
@@ -58,14 +63,21 @@ class Forecast:
             params['date'] = date.date().isoformat()
         elif date and isinstance(date, date_):
             params['date'] = date.isoformat()
-        if distance:
-            params['distance'] = distance
+        if distance is not None:
+            warnings.warn(
+                'The distance parameter is deprecated and ignored by the '
+                'AirNow 2026 API. It will be removed in a future version.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         data = await self._request(
             'aq/forecast/current',
             params=params
         )
-        return [_normalize_forecast(f) for f in data]
+        if self._legacy_format:
+            return [_normalize_forecast(f) for f in data]
+        return data
 
     async def latLong(
         self,
@@ -87,11 +99,18 @@ class Forecast:
             params['date'] = date.date().isoformat()
         elif date and isinstance(date, date_):
             params['date'] = date.isoformat()
-        if distance:
-            params['distance'] = distance
+        if distance is not None:
+            warnings.warn(
+                'The distance parameter is deprecated and ignored by the '
+                'AirNow 2026 API. It will be removed in a future version.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         data = await self._request(
             'aq/forecast/current',
             params=params
         )
-        return [_normalize_forecast(f) for f in data]
+        if self._legacy_format:
+            return [_normalize_forecast(f) for f in data]
+        return data

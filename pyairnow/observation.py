@@ -1,4 +1,5 @@
 '''Retrieve a list of Current Observations'''
+import warnings
 from typing import Callable, Coroutine, Optional, Union
 
 
@@ -53,8 +54,12 @@ class Observations:
     Class to retrieve the current air quality observations by zip code or by
     latitude and longitude.
     '''
-    def __init__(self, request: Callable[..., Coroutine]) -> None:
+    def __init__(
+        self, request: Callable[..., Coroutine], *,
+        legacy_format: bool = True
+    ) -> None:
         self._request = request
+        self._legacy_format = legacy_format
 
     async def zipCode(
         self,
@@ -64,14 +69,21 @@ class Observations:
     ) -> list:
         '''Request current observation for zip code'''
         params: dict = dict(zipCode=zipCode)
-        if distance:
-            params['distance'] = distance
+        if distance is not None:
+            warnings.warn(
+                'The distance parameter is deprecated and ignored by the '
+                'AirNow 2026 API. It will be removed in a future version.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         data = await self._request(
             'aq/observation/current/ziplatlong',
             params=params
         )
-        return [_normalize_observation(o) for o in data]
+        if self._legacy_format:
+            return [_normalize_observation(o) for o in data]
+        return data
 
     async def latLong(
         self,
@@ -85,11 +97,18 @@ class Observations:
             latitude=str(latitude),
             longitude=str(longitude),
         )
-        if distance:
-            params['distance'] = distance
+        if distance is not None:
+            warnings.warn(
+                'The distance parameter is deprecated and ignored by the '
+                'AirNow 2026 API. It will be removed in a future version.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         data = await self._request(
             'aq/observation/current/ziplatlong',
             params=params
         )
-        return [_normalize_observation(o) for o in data]
+        if self._legacy_format:
+            return [_normalize_observation(o) for o in data]
+        return data

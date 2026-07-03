@@ -31,7 +31,8 @@ async def test_api_forecast_zipcode(mock_airnowapi):
 @pytest.mark.asyncio
 async def test_api_forecast_zipcode_distance(mock_airnowapi):
     client = WebServiceAPI(MOCK_API_KEY)
-    data = await client.forecast.zipCode(90001, distance=100)
+    with pytest.warns(DeprecationWarning, match='distance parameter is deprecated'):
+        data = await client.forecast.zipCode(90001, distance=100)
 
     assert isinstance(data, list)
     assert len(data) == 2
@@ -91,10 +92,11 @@ async def test_api_forecast_ll(mock_airnowapi):
 @pytest.mark.asyncio
 async def test_api_forecast_ll_distance(mock_airnowapi):
     client = WebServiceAPI(MOCK_API_KEY)
-    data = await client.forecast.latLong(
-        34.053718, -118.244842,
-        distance=120
-    )
+    with pytest.warns(DeprecationWarning, match='distance parameter is deprecated'):
+        data = await client.forecast.latLong(
+            34.053718, -118.244842,
+            distance=120
+        )
 
     assert isinstance(data, list)
     assert len(data) == 2
@@ -134,3 +136,28 @@ async def test_api_forecast_ll_date_datetime(mock_airnowapi):
 
     assert isinstance(data, list)
     assert len(data) == 2
+
+
+@pytest.mark.asyncio
+async def test_api_forecast_zipcode_raw_format(mock_airnowapi):
+    client = WebServiceAPI(MOCK_API_KEY, legacy_format=False)
+    data = await client.forecast.zipCode(90001)
+
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]['parameterName'] == 'OZONE'
+    assert data[0]['aqi'] == 55
+    assert data[0]['categoryName'] == 'Moderate'
+    assert 'DateIssue' not in data[0]
+
+
+@pytest.mark.asyncio
+async def test_api_forecast_ll_raw_format(mock_airnowapi):
+    client = WebServiceAPI(MOCK_API_KEY, legacy_format=False)
+    data = await client.forecast.latLong(34.053718, -118.244842)
+
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]['parameterName'] == 'OZONE'
+    assert data[0]['aqi'] == 55
+    assert 'DateIssue' not in data[0]
